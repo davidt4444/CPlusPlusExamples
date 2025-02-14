@@ -1,0 +1,78 @@
+## Mac
+This is unsuccessful due to some of the required libraries being in a different architecture. I will update this when I find a workaround other than docker. 
+
+### Install xcode tools 
+ xcode-select --install
+ clang --version
+### Install cpprestsdk
+brew install cpprestsdk
+### Install mysql-connector-cpp
+brew install mysql-connector-c++ 
+or
+https://dev.mysql.com/downloads/connector/cpp/
+### Compile code 
+g++ bcs.cpp -o bcs
+### Run code 
+./bcs
+
+If Error received follow alt-addition
+### Install more updated version of clang from homebrew
+brew upgrade
+brew install llvm
+brew install boost
+brew install cmake git boost openssl ninja
+
+Add the prefiixes for the installs bellow to the CMakeLists.txt
+brew link mysql-connector-c++
+/usr/local/Cellar/mysql-connector-c++/9.2.0
+brew link cpprestsdk
+/usr/local/Cellar/cpprestsdk/2.10.19_1
+
+
+
+
+g++ -std=c++11 -I/usr/local/Cellar/cpprestsdk/2.10.19_1/include -I/usr/local/Cellar/mysql-connector-c++/9.2.0/include -o bcs -L/usr/local/Cellar/cpprestsdk/2.10.19_1/lib -lcpprest -L/usr/local/Cellar/mysql-connector-c++/9.2.0/lib -lmysqlcppconn
+
+
+g++ -std=c++11 -I/path/to/cpprestsdk/include -I/path/to/mysql-connector-cpp/include bcs.cpp -o bcs -L/path/to/cpprestsdk/lib -lcpprest -L/path/to/mysql-connector-cpp/lib -lmysqlcppconn
+
+
+mkdir Release
+mkdir build.debug
+cd build.debug
+cmake -G Ninja ../Release -DCMAKE_BUILD_TYPE=Debug
+ninja
+
+
+
+
+
+clang++ -std=c++11 bcs.cpp bcs.cpp -o bcs
+
+
+clang++ -std=c++11 -I/Users/davidthigpen/mysql-connector-cpp-master/driver -I/Users/davidthigpen/mysql-connector-cpp-master bcs.cpp bcs.cpp -o bcs
+
+
+g++ -std=c++11 -I/usr/local/opt/cpprestsdk/include/cpprest -I/usr/include/mysql -o bcs -L/usr/local/opt/cpprestsdk/lib -lcpprest -lmysqlcppconn
+
+
+
+
+
+
+https://github.com/microsoft/cpprestsdk
+https://github.com/anhstudios/mysql-connector-cpp/tree/master
+https://github.com/microsoft/cpprestsdk/wiki/How-to-build-for-Mac-OS-X
+brew install cmake git boost openssl ninja
+git clone https://github.com/Microsoft/cpprestsdk.git casablanca
+cd casablanca
+git submodule update --init
+mkdir build.debug
+cd build.debug
+cmake -G Ninja ../Release -DCMAKE_BUILD_TYPE=Debug
+ninja
+
+
+
+g++ -std=c++11 -I/path/to/cpprestsdk/include -I/Users/davidthigpen/mysql-connector-cpp-master/driver bcs.cpp -o bcs -L/path/to/cpprestsdk/lib -lcpprest -L/path/to/mysql-connector-cpp/lib -lmysqlcppconn
+
