@@ -50,9 +50,6 @@ int main() {
 
     listener.support(methods::GET, [](http_request request) {
         auto paths = uri::split_path(uri::decode(request.relative_uri().path()));
-for(int i=0; i<paths.size();i++){
-    std::cout << "paths["<< i <<"]=" << paths[i]<< std::endl;
-}
         if (paths.size() == 0) { // No ID, just list all posts
             handle_get(request);
         } else if (paths.size() == 1) { // There's an ID after posts
