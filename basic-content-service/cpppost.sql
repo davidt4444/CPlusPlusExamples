@@ -19,3 +19,33 @@ CREATE TABLE CPPPost (
 ALTER TABLE CPPPost
 ADD CONSTRAINT fk_author
 FOREIGN KEY (authorId) REFERENCES User(id);
+
+INSERT INTO CPPPost(
+    title, 
+    content, 
+    author, 
+    category, 
+    createdAt
+    ) VALUES (
+        "A test article", 
+        "Some content", 
+        "Me", 
+        "test_cat", 
+        NOW()
+        )
+   ; 
+INSERT INTO CPPPost(title, content, author, category, createdAt) VALUES (?, ?, ?, ?, NOW())
+
+UPDATE CPPPost
+SET title='A test article', 
+    content='Some content', 
+    author='Me', 
+    category='test_cat', 
+    updatedAt=NOW()
+WHERE id=1
+;
+UPDATE CPPPost SET title=?, content=?, author=?, category=?, updatedAt=NOW() WHERE id=?
+
+delete from CPPPost where id =1;
+delete from CPPPost where id =?
+

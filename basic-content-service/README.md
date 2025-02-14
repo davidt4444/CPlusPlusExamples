@@ -42,7 +42,25 @@ clang++ -std=c++11 -I/usr/local/include bcs.cpp -o bcs \
 Open/attach a new terminal
 If not installed, install curl
 sudo apt install curl
-curl 'http://localhost:8080/posts'
-curl 'http://localhost:8080/posts/1'
-curl 'http://localhost:8080/posts/1/jhgjg'
+curl -X POST "http://localhost:8080/posts" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "title": "Sample Title",
+           "content": "This is a sample content for testing.",
+           "author": "John Doe",
+           "category": "Test",
+           "likesCount": 0,
+           "isPublished": true,
+           "views": 0
+         }'
+curl "http://localhost:8080/posts"
+curl "http://localhost:8080/posts/1"
+curl -X PUT "http://localhost:8080/posts/1" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "title": "Updated Title",
+           "content": "This content has been updated.",
+           "likesCount": 5
+         }'
+curl -X DELETE "http://localhost:8080/posts/1"
 
