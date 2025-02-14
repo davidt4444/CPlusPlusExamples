@@ -1,31 +1,29 @@
 # CPlusPlusExamples
 
 ## Ubuntu 24.04 or nginx
-ssh dathigpe@192.168.40.149
-sudo apt update
-sudo apt upgrade
+sudo apt update <br />
+sudo apt upgrade<br />
 ### Install cpprestsdk
-https://askubuntu.com/questions/165868/installing-mysql-connector-c
-sudo apt install libmysqlcppconn-dev
+sudo apt install libmysqlcppconn-dev<br />
 ### Install mysql-connector-cpp
-sudo apt install libcpprest-dev
+sudo apt install libcpprest-dev<br />
 ### Install boost
-sudo apt install libboost-all-dev
+sudo apt install libboost-all-dev<br />
 ### Install clang
-sudo apt install clang
+sudo apt install clang<br />
 ### MySQL 
-Update the username, password and database in bcs.cpp
-Also, run the sql for the cpppost object in cpppost.sql from the mysql client.
+Update the username, password and database in bcs.cpp<br />
+Also, run the sql for the cpppost object in cpppost.sql from the mysql client.<br />
 ### compile
-clang++ -std=c++11 -I/usr/local/include bcs.cpp -o bcs \
-  -L/usr/local/lib \
-  -lcpprest \
-  -lboost_system \
-  -lboost_thread \
-  -lpthread \
-  -lcrypto \
-  -lssl \
-  -lmysqlcppconn
+clang++ -std=c++11 -I/usr/local/include bcs.cpp -o bcs \<br />
+  -L/usr/local/lib \<br />
+  -lcpprest \<br />
+  -lboost_system \<br />
+  -lboost_thread \<br />
+  -lpthread \<br />
+  -lcrypto \<br />
+  -lssl \<br />
+  -lmysqlcppconn<br />
 ### run 
-./bcs
+./bcs<br />
 
