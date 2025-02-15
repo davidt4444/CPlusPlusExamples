@@ -7,21 +7,9 @@
 #include <cppconn/resultset.h>
 #include <string>
 #include <iostream>
-
 #include <vector>
+#include <sstream>
 
-namespace utility {
-namespace conversions {
-    inline std::string join(const std::string& separator, const std::vector<std::string>& parts) {
-        if (parts.empty()) return "";
-        std::string result = parts[0];
-        for (size_t i = 1; i < parts.size(); ++i) {
-            result += separator + parts[i];
-        }
-        return result;
-    }
-}
-}
 using namespace web;
 using namespace http;
 using namespace http::experimental::listener;
@@ -35,11 +23,55 @@ const std::string database = "your_database";
 sql::mysql::MySQL_Driver *driver;
 sql::Connection *con;
 
+class CPPPost {
+public:
+    int id;
+    std::string title;
+    std::string content;
+    std::string createdAt;
+    std::string author;
+    std::string category;
+    std::string updatedAt;
+    int likesCount;
+    int authorId;
+    bool isPublished;
+    int views;
+
+    CPPPost() : id(0), likesCount(0), authorId(0), isPublished(true), views(0) {}
+
+    json::value to_json() const {
+        json::value j;
+        j["id"] = json::value::number(id);
+        j["title"] = json::value::string(utility::conversions::to_string_t(title));
+        j["content"] = json::value::string(utility::conversions::to_string_t(content));
+        j["createdAt"] = json::value::string(utility::conversions::to_string_t(createdAt));
+        j["author"] = json::value::string(utility::conversions::to_string_t(author));
+        j["category"] = json::value::string(utility::conversions::to_string_t(category));
+        j["updatedAt"] = updatedAt.empty() ? json::value::null() : json::value::string(utility::conversions::to_string_t(updatedAt));
+        j["likesCount"] = json::value::number(likesCount);
+        j["authorId"] = authorId ? json::value::number(authorId) : json::value::null();
+        j["isPublished"] = json::value::boolean(isPublished);
+        j["views"] = json::value::number(views);
+        return j;
+    }
+
+    void from_json(const json::value& j) {
+        if (j.has_field("title")) title = utility::conversions::to_utf8string(j.at("title").as_string());
+        if (j.has_field("content")) content = utility::conversions::to_utf8string(j.at("content").as_string());
+        if (j.has_field("author")) author = utility::conversions::to_utf8string(j.at("author").as_string());
+        if (j.has_field("category")) category = utility::conversions::to_utf8string(j.at("category").as_string());
+        if (j.has_field("likesCount")) likesCount = j.at("likesCount").as_integer();
+        if (j.has_field("isPublished")) isPublished = j.at("isPublished").as_bool();
+        if (j.has_field("views")) views = j.at("views").as_integer();
+        // Note: id, createdAt, updatedAt, authorId are usually set by the database
+    }
+};
+
 void handle_get(http_request request);
 void handle_post(http_request request);
 void handle_put(http_request request);
 void handle_delete(http_request request);
-void get_post(http_request request); // Added function declaration
+void get_post(http_request request);
 
 int main() {
     driver = sql::mysql::get_mysql_driver_instance();
@@ -47,7 +79,7 @@ int main() {
     con->setSchema(database);
 
     http_listener listener("http://localhost:8080/posts");
-
+    
     listener.support(methods::GET, [](http_request request) {
         auto paths = uri::split_path(uri::decode(request.relative_uri().path()));
         if (paths.size() == 0) { // No ID, just list all posts
@@ -62,7 +94,7 @@ int main() {
     listener.support(methods::POST, handle_post);
     listener.support(methods::PUT, handle_put);
     listener.support(methods::DEL, handle_delete);
-
+    
     try {
         listener.open().wait();
         std::cout << "Listening for requests at: http://localhost:8080/posts and http://localhost:8080/posts/{id}" << std::endl;
@@ -82,19 +114,19 @@ void handle_get(http_request request) {
         sql::PreparedStatement *pstmt = con->prepareStatement("SELECT * FROM CPPPost");
         sql::ResultSet *res = pstmt->executeQuery();
         while (res->next()) {
-            json::value obj;
-            obj["id"] = json::value::number(res->getInt("id"));
-            obj["title"] = json::value::string(res->getString("title"));
-            obj["content"] = json::value::string(res->getString("content"));
-            obj["createdAt"] = json::value::string(res->getString("createdAt"));
-            obj["author"] = json::value::string(res->getString("author"));
-            obj["category"] = json::value::string(res->getString("category"));
-            obj["updatedAt"] = json::value::string(res->getString("updatedAt"));
-            obj["likesCount"] = json::value::string(res->getString("likesCount"));
-            obj["authorId"] = json::value::string(res->getString("authorId"));
-            obj["isPublished"] = json::value::string(res->getString("isPublished"));
-            obj["views"] = json::value::string(res->getString("views"));
-            result[result.size()] = obj;
+            CPPPost post;
+            post.id = res->getInt("id");
+            post.title = res->getString("title");
+            post.content = res->getString("content");
+            post.createdAt = res->getString("createdAt");
+            post.author = res->getString("author");
+            post.category = res->getString("category");
+            if (!res->isNull("updatedAt")) post.updatedAt = res->getString("updatedAt");
+            post.likesCount = res->getInt("likesCount");
+            if (!res->isNull("authorId")) post.authorId = res->getInt("authorId");
+            post.isPublished = res->getBoolean("isPublished");
+            post.views = res->getInt("views");
+            result[result.size()] = post.to_json();
         }
         delete res;
         delete pstmt;
@@ -107,11 +139,17 @@ void handle_get(http_request request) {
 void handle_post(http_request request) {
     request.extract_json().then([=](json::value postData) {
         try {
-            sql::PreparedStatement *pstmt = con->prepareStatement("INSERT INTO CPPPost(title, content, author, category, createdAt) VALUES (?, ?, ?, ?, NOW())");
-            pstmt->setString(1, utility::conversions::to_utf8string(postData.at("title").as_string()));
-            pstmt->setString(2, utility::conversions::to_utf8string(postData.at("content").as_string()));
-            pstmt->setString(3, utility::conversions::to_utf8string(postData.at("author").as_string()));
-            pstmt->setString(4, utility::conversions::to_utf8string(postData.at("category").as_string()));
+            CPPPost newPost;
+            newPost.from_json(postData);
+
+            sql::PreparedStatement *pstmt = con->prepareStatement("INSERT INTO CPPPost(title, content, author, category, likesCount, isPublished, views) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            pstmt->setString(1, newPost.title);
+            pstmt->setString(2, newPost.content);
+            pstmt->setString(3, newPost.author);
+            pstmt->setString(4, newPost.category);
+            pstmt->setInt(5, newPost.likesCount);
+            pstmt->setBoolean(6, newPost.isPublished);
+            pstmt->setInt(7, newPost.views);
             pstmt->execute();
             delete pstmt;
             request.reply(status_codes::Created, json::value::string(U("Post created successfully")));
@@ -132,67 +170,43 @@ void handle_put(http_request request) {
         int postId = std::stoi(paths[0]); // ID should be the second element in the path
 
         request.extract_json().then([=](json::value updateData) {
+            CPPPost updatedPost;
+            updatedPost.id = postId;
+            updatedPost.from_json(updateData);
+
             sql::PreparedStatement *pstmt = nullptr;
             try {
-                // Construct SQL query dynamically based on which fields are updated
                 std::stringstream sql;
                 sql << "UPDATE CPPPost SET ";
 
                 std::vector<std::string> fields;
-                if (updateData.has_field("title")) {
-                    fields.push_back("title = ?");
-                }
-                if (updateData.has_field("content")) {
-                    fields.push_back("content = ?");
-                }
-                if (updateData.has_field("author")) {
-                    fields.push_back("author = ?");
-                }
-                if (updateData.has_field("category")) {
-                    fields.push_back("category = ?");
-                }
-                if (updateData.has_field("isPublished")) {
-                    fields.push_back("isPublished = ?");
-                }
-                if (updateData.has_field("likesCount")) {
-                    fields.push_back("likesCount = ?");
-                }
-                if (updateData.has_field("views")) {
-                    fields.push_back("views = ?");
-                }
+                if (!updatedPost.title.empty()) fields.push_back("title = ?");
+                if (!updatedPost.content.empty()) fields.push_back("content = ?");
+                if (!updatedPost.author.empty()) fields.push_back("author = ?");
+                if (!updatedPost.category.empty()) fields.push_back("category = ?");
+                if (updateData.has_field("isPublished")) fields.push_back("isPublished = ?");
+                if (updateData.has_field("likesCount")) fields.push_back("likesCount = ?");
+                if (updateData.has_field("views")) fields.push_back("views = ?");
 
                 if (fields.empty()) {
                     request.reply(status_codes::BadRequest, U("No fields to update"));
                     return;
                 }
 
-                sql << utility::conversions::to_utf8string(utility::conversions::join(", ", fields));
+                for (const auto& field : fields) sql << field << ", ";
+                sql.seekp(-2, std::ios_base::end); // Remove last comma
                 sql << " WHERE id = ?";
 
                 pstmt = con->prepareStatement(sql.str());
                 int paramIndex = 1;
-                if (updateData.has_field("title")) {
-                    pstmt->setString(paramIndex++, utility::conversions::to_utf8string(updateData.at("title").as_string()));
-                }
-                if (updateData.has_field("content")) {
-                    pstmt->setString(paramIndex++, utility::conversions::to_utf8string(updateData.at("content").as_string()));
-                }
-                if (updateData.has_field("author")) {
-                    pstmt->setString(paramIndex++, utility::conversions::to_utf8string(updateData.at("author").as_string()));
-                }
-                if (updateData.has_field("category")) {
-                    pstmt->setString(paramIndex++, utility::conversions::to_utf8string(updateData.at("category").as_string()));
-                }
-                if (updateData.has_field("isPublished")) {
-                    pstmt->setBoolean(paramIndex++, updateData.at("isPublished").as_bool());
-                }
-                if (updateData.has_field("likesCount")) {
-                    pstmt->setInt(paramIndex++, updateData.at("likesCount").as_integer());
-                }
-                if (updateData.has_field("views")) {
-                    pstmt->setInt(paramIndex++, updateData.at("views").as_integer());
-                }
-                pstmt->setInt(paramIndex, postId);
+                if (!updatedPost.title.empty()) pstmt->setString(paramIndex++, updatedPost.title);
+                if (!updatedPost.content.empty()) pstmt->setString(paramIndex++, updatedPost.content);
+                if (!updatedPost.author.empty()) pstmt->setString(paramIndex++, updatedPost.author);
+                if (!updatedPost.category.empty()) pstmt->setString(paramIndex++, updatedPost.category);
+                if (updateData.has_field("isPublished")) pstmt->setBoolean(paramIndex++, updatedPost.isPublished);
+                if (updateData.has_field("likesCount")) pstmt->setInt(paramIndex++, updatedPost.likesCount);
+                if (updateData.has_field("views")) pstmt->setInt(paramIndex++, updatedPost.views);
+                pstmt->setInt(paramIndex, updatedPost.id);
 
                 int affectedRows = pstmt->executeUpdate();
                 if (affectedRows > 0) {
@@ -239,6 +253,7 @@ void handle_delete(http_request request) {
         request.reply(status_codes::BadRequest, json::value::string(U("An error occurred: ") + utility::conversions::to_string_t(e.what())));
     }
 }
+
 void get_post(http_request request) {
     try {
         auto paths = uri::split_path(uri::decode(request.request_uri().to_string()));
@@ -248,27 +263,25 @@ void get_post(http_request request) {
         }
 
         int postId = std::stoi(paths[0]);
-        json::value result;
+        CPPPost post;
 
         sql::PreparedStatement *pstmt = con->prepareStatement("SELECT * FROM CPPPost WHERE id = ?");
         pstmt->setInt(1, postId);
         sql::ResultSet *res = pstmt->executeQuery();
 
         if (res->next()) {
-            json::value obj;
-            obj["id"] = json::value::number(res->getInt("id"));
-            obj["title"] = json::value::string(res->getString("title"));
-            obj["content"] = json::value::string(res->getString("content"));
-            obj["createdAt"] = json::value::string(res->getString("createdAt"));
-            obj["author"] = json::value::string(res->getString("author"));
-            obj["category"] = json::value::string(res->getString("category"));
-            obj["updatedAt"] = json::value::string(res->getString("updatedAt"));
-            obj["likesCount"] = json::value::string(res->getString("likesCount"));
-            obj["authorId"] = json::value::string(res->getString("authorId"));
-            obj["isPublished"] = json::value::string(res->getString("isPublished"));
-            obj["views"] = json::value::string(res->getString("views"));
-            result= obj;
-            request.reply(status_codes::OK, result);
+            post.id = res->getInt("id");
+            post.title = res->getString("title");
+            post.content = res->getString("content");
+            post.createdAt = res->getString("createdAt");
+            post.author = res->getString("author");
+            post.category = res->getString("category");
+            if (!res->isNull("updatedAt")) post.updatedAt = res->getString("updatedAt");
+            post.likesCount = res->getInt("likesCount");
+            if (!res->isNull("authorId")) post.authorId = res->getInt("authorId");
+            post.isPublished = res->getBoolean("isPublished");
+            post.views = res->getInt("views");
+            request.reply(status_codes::OK, post.to_json());
         } else {
             request.reply(status_codes::NotFound, U("Post not found"));
         }

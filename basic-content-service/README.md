@@ -64,3 +64,13 @@ curl -X PUT "http://localhost:8080/posts/1" \
          }'
 curl -X DELETE "http://localhost:8080/posts/1"
 
+## alternate impl with bcs_class
+clang++ -std=c++11 -I/usr/local/include bcs_class.cpp -o bcs_class \
+  -L/usr/local/lib \
+  -lcpprest \
+  -lboost_system \
+  -lboost_thread \
+  -lpthread \
+  -lcrypto \
+  -lssl \
+  -lmysqlcppconn<br />
