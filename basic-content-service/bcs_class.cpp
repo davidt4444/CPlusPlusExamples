@@ -26,6 +26,7 @@ sql::Connection *con;
 class CPPPost {
 public:
     int id;
+    std::string uniqueId;
     std::string title;
     std::string content;
     std::string createdAt;
@@ -42,6 +43,7 @@ public:
     json::value to_json() const {
         json::value j;
         j["id"] = json::value::number(id);
+        j["uniqueId"] = json::value::string(utility::conversions::to_string_t(uniqueId));
         j["title"] = json::value::string(utility::conversions::to_string_t(title));
         j["content"] = json::value::string(utility::conversions::to_string_t(content));
         j["createdAt"] = json::value::string(utility::conversions::to_string_t(createdAt));
@@ -116,6 +118,7 @@ void handle_get(http_request request) {
         while (res->next()) {
             CPPPost post;
             post.id = res->getInt("id");
+            post.uniqueId = res->getString("uniqueId");
             post.title = res->getString("title");
             post.content = res->getString("content");
             post.createdAt = res->getString("createdAt");
@@ -271,6 +274,7 @@ void get_post(http_request request) {
 
         if (res->next()) {
             post.id = res->getInt("id");
+            post.uniqueId = res->getString("uniqueId");
             post.title = res->getString("title");
             post.content = res->getString("content");
             post.createdAt = res->getString("createdAt");

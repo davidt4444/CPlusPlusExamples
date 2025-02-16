@@ -84,6 +84,7 @@ void handle_get(http_request request) {
         while (res->next()) {
             json::value obj;
             obj["id"] = json::value::number(res->getInt("id"));
+            obj["uniqueId"] = json::value::string(res->getString("uniqueId"));
             obj["title"] = json::value::string(res->getString("title"));
             obj["content"] = json::value::string(res->getString("content"));
             obj["createdAt"] = json::value::string(res->getString("createdAt"));
@@ -257,6 +258,7 @@ void get_post(http_request request) {
         if (res->next()) {
             json::value obj;
             obj["id"] = json::value::number(res->getInt("id"));
+            obj["uniqueId"] = json::value::string(res->getString("uniqueId"));
             obj["title"] = json::value::string(res->getString("title"));
             obj["content"] = json::value::string(res->getString("content"));
             obj["createdAt"] = json::value::string(res->getString("createdAt"));
