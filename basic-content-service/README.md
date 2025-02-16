@@ -27,7 +27,8 @@ sudo apt install clang<br />
 Update the username, password and database in bcs.cpp<br />
 Also, run the sql for the cpppost object in cpppost.sql from the mysql client.<br />
 ### compile
-clang++ -std=c++11 -I/usr/local/include bcs.cpp -o bcs \
+#### prior versions had the  -std=c++11 flag, but it works fine without it
+clang++ -I/usr/local/include bcs.cpp -o bcs \
   -L/usr/local/lib \
   -lcpprest \
   -lboost_system \
@@ -65,7 +66,8 @@ curl -X PUT "http://localhost:8080/posts/1" \
 curl -X DELETE "http://localhost:8080/posts/1"
 
 ## alternate impl with bcs_class
-clang++ -std=c++11 -I/usr/local/include bcs_class.cpp -o bcs_class \
+#### prior versions had the  -std=c++11 flag, but it works fine without it
+clang++ -I/usr/local/include bcs_class.cpp -o bcs_class \
   -L/usr/local/lib \
   -lcpprest \
   -lboost_system \
