@@ -197,7 +197,8 @@ void handle_put(http_request request) {
                 }
 
                 for (const auto& field : fields) sql << field << ", ";
-                sql.seekp(-2, std::ios_base::end); // Remove last comma
+                //sql.seekp(-2, std::ios_base::end); // Remove last comma
+                sql << " updatedAt = NOW()";
                 sql << " WHERE id = ?";
 
                 pstmt = con->prepareStatement(sql.str());

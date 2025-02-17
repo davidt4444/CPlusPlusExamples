@@ -168,6 +168,7 @@ void handle_put(http_request request) {
                 }
 
                 sql << utility::conversions::to_utf8string(utility::conversions::join(", ", fields));
+                sql << ", updatedAt = NOW()";
                 sql << " WHERE id = ?";
 
                 pstmt = con->prepareStatement(sql.str());
